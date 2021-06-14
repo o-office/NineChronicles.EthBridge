@@ -47,7 +47,6 @@ import { UnwrappedEvent } from "./messages/unwrapped-event";
         });
     }
 
-    const CONFIRMATIONS = 10;
 
     const monitorStateStore: IMonitorStateStore = await Sqlite3MonitorStateStore.open(MONITOR_STATE_STORE_PATH);
     const monitorStateStoreKeys = {
@@ -113,10 +112,15 @@ import { UnwrappedEvent } from "./messages/unwrapped-event";
                 const { transactionHash } = await minter.mint(recipient, parseFloat(amount));
                 console.log("Receipt", transactionHash);
                 await monitorStateStore.store(monitorStateStoreKeys.nineChronicles, { blockHash, txId });
-                await slackWebClient.chat.postMessage({
-                    channel: "#nine-chronicles-bridge-bot",
-                    ...new UnwrappedEvent(EXPLORER_ROOT_URL, ETHERSCAN_ROOT_URL, sender, recipient, amount, txId, transactionHash)
-                });
+                try {
+                  await slackWebClient.chat.postMessage({
+                      channel: "#nine-chronicles-bridge-bot",
+                      ...new UnwrappedEvent(EXPLORER_ROOT_URL, ETHERSCAN_ROOT_URL, sender, recipient, amount, txId, transactionHash)
+                  });
+                } catch(error) {
+                  console.error(`Cannot send slack message. error: ${error}`);
+                }
+
             }
         });
     }
